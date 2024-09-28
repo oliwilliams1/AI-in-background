@@ -127,7 +127,15 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="geminiApi.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="screenshotApi.cpp" />
+    <ClCompile Include="systemTrayApi.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="geminiApi.h" />
+    <ClInclude Include="screenshotApi.h" />
+    <ClInclude Include="systemTrayApi.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
