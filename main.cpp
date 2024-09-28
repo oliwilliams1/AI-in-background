@@ -13,7 +13,19 @@ int main() {
     //std::cout << requestGemini(API_KEY);
 
     InitializeTrayIcon(GetModuleHandle(NULL));
-    Sleep(5000);
+
+    cv::Mat mat = cv::Mat(32, 32, CV_8UC3, cv::Scalar(255, 0, 0));
+    SetTrayIcon(mat);
+    Sleep(3000);
+
+    mat = cv::Mat(32, 32, CV_8UC3, cv::Scalar(0, 255, 0));
+    SetTrayIcon(mat);
+    Sleep(3000);
+
+    mat = cv::Mat(32, 32, CV_8UC3, cv::Scalar(0, 0, 255));
+    SetTrayIcon(mat);
+    Sleep(3000);
+
 	CleanupTrayIcon();
 
     return 0;

@@ -45,6 +45,62 @@ void CleanupTrayIcon() {
     Shell_NotifyIcon(NIM_DELETE, &nid);
 }
 
+HICON CreateHICONFromMat(const cv::Mat& image) {
+    // Ensure the image is in the correct format and size
+    if (image.empty() || image.cols != 32 || image.rows != 32 || image.type() != CV_8UC3) {
+        return NULL;
+    }
+
+    BITMAPINFOHEADER bi = {};
+    bi.biSize = sizeof(BITMAPINFOHEADER);
+    bi.biWidth = image.cols;
+    bi.biHeight = -image.rows;
+    bi.biPlanes = 1;
+    bi.biBitCount = 32; // ARGB
+    bi.biCompression = BI_RGB;
+
+    HDC hdc = GetDC(NULL);
+    void* pPixels = NULL;
+    HBITMAP hBitmap = CreateDIBSection(hdc, (BITMAPINFO*)&bi, DIB_RGB_COLORS, &pPixels, NULL, 0);
+    ReleaseDC(NULL, hdc);
+
+    // Check if the bitmap was created successfully
+    if (!hBitmap) {
+        return NULL;
+    }
+
+    // Copy the image data to the bitmap
+    for (int y = 0; y < image.rows; ++y) {
+        for (int x = 0; x < image.cols; ++x) {
+            cv::Vec3b pixel = image.at<cv::Vec3b>(y, x);
+            BYTE* destPixel = static_cast<BYTE*>(pPixels) + (y * image.cols + x) * 4; // 4 bytes for ARGB
+            destPixel[0] = pixel[0]; // B
+            destPixel[1] = pixel[1]; // G
+            destPixel[2] = pixel[2]; // R
+            destPixel[3] = 255;      // A
+        }
+    }
+
+    // Create an icon from the bitmap
+    HICON hIcon = CreateIcon(GetModuleHandle(NULL), 32, 32, 1, 32, NULL, (BYTE*)pPixels);
+
+    // Clean up the bitmap
+    DeleteObject(hBitmap);
+
+    return hIcon;
+}
+
+void SetTrayIcon(const cv::Mat& image) {
+    HICON hIcon = CreateHICONFromMat(image);
+    
+    if (hIcon) {
+        nid.hIcon = hIcon;
+        Shell_NotifyIcon(NIM_MODIFY, &nid);
+        std::cout << "Tray icon updated." << std::endl;
+        DestroyIcon(hIcon); // Clean up the icon
+    }
+}
+
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
     switch (uMsg) {
     case WM_TRAYICON:
