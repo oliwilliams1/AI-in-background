@@ -5,7 +5,7 @@ size_t WriteCallback(void* contents, size_t size, size_t nmemb, std::string* use
     return size * nmemb;
 }
 
-std::string requestGemini(const std::string& apiKey) {
+std::string requestGemini(std::string request, const std::string& apiKey) {
     CURL* curl;
     CURLcode res;
     std::string response;
@@ -14,9 +14,9 @@ std::string requestGemini(const std::string& apiKey) {
     std::string url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" + apiKey;
 
     // JSON payload
-    const char* jsonData = R"({
+    std::string jsonData = R"({
         "contents": [{
-            "parts": [{"text": "Write a story about a magic backpack."}]
+            "parts": [{"text": ")" + request + R"("}]
         }]
     })";
 
@@ -34,7 +34,7 @@ std::string requestGemini(const std::string& apiKey) {
         curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
 
         // Set the JSON data to send
-        curl_easy_setopt(curl, CURLOPT_POSTFIELDS, jsonData);
+        curl_easy_setopt(curl, CURLOPT_POSTFIELDS, (const char*)jsonData.c_str());
 
         // Set the write callback function to capture the response
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);

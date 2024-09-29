@@ -127,12 +127,14 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="clipboardApi.cpp" />
     <ClCompile Include="geminiApi.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="screenshotApi.cpp" />
     <ClCompile Include="systemTrayApi.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="clipboardApi.h" />
     <ClInclude Include="geminiApi.h" />
     <ClInclude Include="screenshotApi.h" />
     <ClInclude Include="systemTrayApi.h" />
