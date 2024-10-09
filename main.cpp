@@ -4,6 +4,8 @@
 #include <chrono>
 #include <glm/vec3.hpp>
 #include <glm/vec2.hpp>
+#include <tesseract/baseapi.h>
+#include <tesseract/ocrclass.h>
 #include "screenshotApi.h"
 #include "geminiApi.h"
 #include "systemTrayApi.h"
@@ -40,6 +42,29 @@ std::string serializeResponse(const std::string& input) {
     return output;
 }
 
+std::string performOCR(const cv::Mat& image) {
+    // Create a Tesseract OCR engine instance
+    tesseract::TessBaseAPI* ocr = new tesseract::TessBaseAPI();
+
+    // Init tesseract with english
+    if (ocr->Init(NULL, "eng")) {
+        std::cerr << "Could not initialize tesseract." << std::endl;
+        return "";
+    }
+
+    ocr->SetImage(image.data, image.cols, image.rows, 1, image.step[0]);
+
+    // Perform OCR
+    char* outText = ocr->GetUTF8Text();
+    std::string result(outText);
+
+    // Clean up
+    delete[] outText;
+    ocr->End();
+
+    return result;
+}
+
 void basicInteration() {
     // Get question from clipboard
     std::string text = GetClipboardText();
@@ -68,7 +93,31 @@ void ocrInteraction(cv::Rect roi) {
     // Crop image
     cv::Mat croppedScreenshot = screenshot(roi).clone();
 
-    cv::imshow("Screenshot", croppedScreenshot);
+    // Conv to grey-scale
+    cv::Mat grayImage;
+    cv::cvtColor(croppedScreenshot, grayImage, cv::COLOR_BGR2GRAY);
+
+    // Apply thresholds
+    cv::Mat binaryImage;
+    cv::threshold(grayImage, binaryImage, 0, 255, cv::THRESH_BINARY | cv::THRESH_OTSU);
+
+    // Resize (easier for tesseract)
+    cv::Mat resizedImage;
+    cv::resize(binaryImage, resizedImage, cv::Size(), 2.0, 2.0);
+
+    // Ocr cropped
+    UpdateTrayIcon(C_STATE_AWATING_OCR);
+    std::string ocrResult = performOCR(resizedImage);
+
+    std::cout << "OCR result: " << ocrResult;
+
+    // Send ocr response off to gemini
+    UpdateTrayIcon(C_STATE_AWAITING_RESPONSE);
+    std::string response = requestGemini(ocrResult, API_KEY);
+
+    // Remove wierd artifacts fro response
+    response = serializeResponse(response);
+    SetClipboardText(response);
 
     // After everything is done, return to ready staate
     UpdateTrayIcon(C_STATE_READY);
