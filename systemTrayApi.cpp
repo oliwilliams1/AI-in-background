@@ -1,4 +1,5 @@
 #include "systemTrayApi.h"
+#include <opencv2/highgui.hpp>
 
 #define WM_TRAYICON (WM_USER + 1)
 
@@ -8,6 +9,8 @@ NOTIFYICONDATA nid;
 
 // Window procedure declaration
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+
+cv::Mat icon = cv::imread("icon.bmp", cv::IMREAD_UNCHANGED);
 
 void InitializeTrayIcon(HINSTANCE hInstance) {
     hInst = hInstance;
@@ -47,18 +50,19 @@ void CleanupTrayIcon() {
 
 HICON CreateHICONFromMat(const cv::Mat& image) {
     // Ensure the image is in the correct format and size
-    if (image.empty() || image.cols != 32 || image.rows != 32 || image.type() != CV_8UC3) {
-        return NULL;
+    if (image.empty() || image.cols != 32 || image.rows != 32 || image.type() != CV_8UC4) {
+        return NULL; // Expecting 32-bit ARGB image
     }
 
     BITMAPINFOHEADER bi = {};
     bi.biSize = sizeof(BITMAPINFOHEADER);
     bi.biWidth = image.cols;
-    bi.biHeight = -image.rows;
+    bi.biHeight = -image.rows; // Negative to indicate a top-down bitmap
     bi.biPlanes = 1;
     bi.biBitCount = 32; // ARGB
     bi.biCompression = BI_RGB;
 
+    // Create a compatible DC and a bitmap
     HDC hdc = GetDC(NULL);
     void* pPixels = NULL;
     HBITMAP hBitmap = CreateDIBSection(hdc, (BITMAPINFO*)&bi, DIB_RGB_COLORS, &pPixels, NULL, 0);
@@ -72,12 +76,12 @@ HICON CreateHICONFromMat(const cv::Mat& image) {
     // Copy the image data to the bitmap
     for (int y = 0; y < image.rows; ++y) {
         for (int x = 0; x < image.cols; ++x) {
-            cv::Vec3b pixel = image.at<cv::Vec3b>(y, x);
+            cv::Vec4b pixel = image.at<cv::Vec4b>(y, x); // Use CV_8UC4 for 32-bit images
             BYTE* destPixel = static_cast<BYTE*>(pPixels) + (y * image.cols + x) * 4; // 4 bytes for ARGB
             destPixel[0] = pixel[0]; // B
             destPixel[1] = pixel[1]; // G
             destPixel[2] = pixel[2]; // R
-            destPixel[3] = 255;      // A
+            destPixel[3] = pixel[3]; // A (Alpha channel)
         }
     }
 
@@ -103,7 +107,17 @@ void SetTrayIcon(const cv::Mat& image) {
 
 void UpdateTrayIcon(glm::vec3 colour) {
     cv::Mat mat;
-    mat = cv::Mat(32, 32, CV_8UC3, CV_RGB(colour.x, colour.y, colour.z));
+    mat = icon.clone();
+
+    for (int y = 0; y < icon.rows; ++y) {
+        for (int x = 0; x < icon.cols; ++x) {
+            cv::Vec3b& pixel = mat.at<cv::Vec3b>(y, x);
+            if (pixel[2] > 150 && pixel[1] < 200 && pixel[0] < 200) {
+                pixel = cv::Vec3b(colour.x, colour.y, colour.z);
+            }
+        }
+    }
+
     SetTrayIcon(mat);
 }
 
