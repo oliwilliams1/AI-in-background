@@ -3,4 +3,4 @@
 #include <windows.h>
 #include <iostream>
 
-void captureScreen(const std::string& filename);
+cv::Mat captureScreen();

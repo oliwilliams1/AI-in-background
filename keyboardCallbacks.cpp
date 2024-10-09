@@ -1,5 +1,11 @@
 #include "keyboardCallbacks.h"
 
+glm::vec2 GetMousePos() {
+    POINT mousePos;
+    GetCursorPos(&mousePos);
+    return glm::vec2(mousePos.x, mousePos.y);
+}
+
 LRESULT CALLBACK KeyboardProc(int nCode, WPARAM wParam, LPARAM lParam) {
     if (nCode == HC_ACTION) {
         KBDLLHOOKSTRUCT* pKeyboard = (KBDLLHOOKSTRUCT*)lParam;
@@ -7,6 +13,7 @@ LRESULT CALLBACK KeyboardProc(int nCode, WPARAM wParam, LPARAM lParam) {
         if (wParam == WM_KEYDOWN) {
             // Record the time when the key is pressed
             if (!keyPressed && pKeyboard->vkCode == KEY) {
+                mouseDownPos = GetMousePos();
                 keyPressTime = std::chrono::steady_clock::now();
                 keyPressed = true;
             }
@@ -14,10 +21,12 @@ LRESULT CALLBACK KeyboardProc(int nCode, WPARAM wParam, LPARAM lParam) {
         else if (wParam == WM_KEYUP) {
             // Calculate the duration when the key is released
             if (keyPressed && pKeyboard->vkCode == KEY) {
+                mouseUpPos = GetMousePos();
+
                 auto keyReleaseTime = std::chrono::steady_clock::now();
                 std::chrono::duration<double, std::milli> duration = keyReleaseTime - keyPressTime;
 
-                onKeyRelease(duration.count());
+                onKeyRelease(duration.count(), mouseDownPos, mouseUpPos);
                 keyPressed = false;
             }
         }

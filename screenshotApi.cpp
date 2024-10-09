@@ -1,6 +1,6 @@
 #include "screenshotApi.h"
 
-void captureScreen(const std::string& filename) {
+cv::Mat captureScreen() {
     HDC hdcScreen = GetDC(NULL);
     HDC hdcMem = CreateCompatibleDC(hdcScreen);
 
@@ -25,11 +25,9 @@ void captureScreen(const std::string& filename) {
     // Convert BGRA to BGR
     cv::cvtColor(mat, mat, cv::COLOR_BGRA2BGR);
 
-    // Save the image to disk
-    cv::imwrite(filename, mat);
-
-    // Clean up
-    DeleteObject(hBitmap);
+    // Destroy the bitmap
+	DeleteObject(hBitmap);
     DeleteDC(hdcMem);
-    ReleaseDC(NULL, hdcScreen);
+	ReleaseDC(NULL, hdcScreen);
+    return mat;
 }
