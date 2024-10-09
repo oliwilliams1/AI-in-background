@@ -101,6 +101,12 @@ void SetTrayIcon(const cv::Mat& image) {
     }
 }
 
+void UpdateTrayIcon(glm::vec3 colour) {
+    cv::Mat mat;
+    mat = cv::Mat(32, 32, CV_8UC3, CV_RGB(colour.x, colour.y, colour.z));
+    SetTrayIcon(mat);
+}
+
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
     switch (uMsg) {
     case WM_TRAYICON:

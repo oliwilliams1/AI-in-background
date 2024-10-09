@@ -1,12 +1,16 @@
 #include <iostream>
 #include <windows.h>
 #include <chrono>
+#include <glm/vec3.hpp>
 #include "screenshotApi.h"
 #include "geminiApi.h"
 #include "systemTrayApi.h"
 #include "clipboardApi.h"
 
-constexpr auto KEY = 0xC0; // Key code for '`'
+constexpr auto KEY = 0xC0; // Key code for `
+
+glm::vec3 C_STATE_READY = glm::vec3(0, 255, 0);
+glm::vec3 C_STATE_AWAITING_RESPONSE = glm::vec3(255, 255, 0);
 
 const std::string API_KEY = "AIzaSyAjtbqg0T4aTbqDnJPl8kIlRH9ZYr6v32g";
 HHOOK keyboardHook;
@@ -14,16 +18,28 @@ HHOOK keyboardHook;
 std::chrono::steady_clock::time_point keyPressTime;
 bool keyPressed = false;
 
-
-
 void onKeyRelease(double duration) {
     if (duration < 200) {
+        // Get question from clipboard
         std::string text = GetClipboardText();
         std::cout << "Request: " << text << std::endl;
+
+        // Tell user request has been sent off
+        UpdateTrayIcon(C_STATE_AWAITING_RESPONSE);
+
+        // Send off request
         std::string response = requestGemini(text, API_KEY);
+
+        // Place response in clipboard
         SetClipboardText(response);
         std::cout << "Response: " << response << std::endl;
+
+        // Tell user response is ready to view
+        UpdateTrayIcon(C_STATE_READY);
     }
+    else {
+        // IMPL screenshot ocr
+    };
 }
 
 LRESULT CALLBACK KeyboardProc(int nCode, WPARAM wParam, LPARAM lParam) {
@@ -62,18 +78,11 @@ void ReleaseHook() {
     UnhookWindowsHookEx(keyboardHook);
 }
 
-void UpdateTrayIcon() {
-    cv::Mat mat;
-    for (int i = 0; i < 3; ++i) {
-        mat = cv::Mat(32, 32, CV_8UC3, CV_RGB((i % 2) * 255, ((i + 1) % 2) * 255, (i % 3) * 255));
-        SetTrayIcon(mat);
-        Sleep(3000); // Wait for 3 seconds
-    }
-}
-
 int main() {
     SetHook();
     InitializeTrayIcon(GetModuleHandle(NULL));
+
+	UpdateTrayIcon(C_STATE_READY);
 
     // Message loop for keyboard events
     MSG msg;
