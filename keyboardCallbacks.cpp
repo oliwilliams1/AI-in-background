@@ -11,23 +11,60 @@ LRESULT CALLBACK KeyboardProc(int nCode, WPARAM wParam, LPARAM lParam) {
         KBDLLHOOKSTRUCT* pKeyboard = (KBDLLHOOKSTRUCT*)lParam;
 
         if (wParam == WM_KEYDOWN) {
-            // Record the time when the key is pressed
-            if (!keyPressed && pKeyboard->vkCode == KEY) {
-                mouseDownPos = GetMousePos();
-                keyPressTime = std::chrono::steady_clock::now();
-                keyPressed = true;
+            // Check if the primary key is pressed
+            if (pKeyboard->vkCode == PRIMARY_KEY) {
+                bool secondaryKeyDown = GetAsyncKeyState(SECONDARY_KEY) & 0x8000;
+
+                if (secondaryKeyDown) {
+                    // Toggle recording
+                    UpdateTrayIcon(C_STATE_RECORDING_STROKES);
+                    recordingStrokes = true;
+                    secondaryKeyPressed = !secondaryKeyPressed;
+                }
+
+                if (!secondaryKeyDown && !keyPressed) {
+                    // Record mouse position and time only if the key is not already pressed
+                    mouseDownPos = GetMousePos();
+                    keyPressTime = std::chrono::steady_clock::now();
+                    keyPressed = true;
+                }
+            }
+            else {
+                // Must be a keystroke, add to list
+                if (recordingStrokes) {
+                    char buffer[2] = { 0 };
+                    BYTE keyboardState[256];
+                    BOOL b = GetKeyboardState(keyboardState);
+
+                    int result = ToAsciiEx(pKeyboard->vkCode, pKeyboard->scanCode, keyboardState, (LPWORD)buffer, 0, GetKeyboardLayout(0));
+                    if (result > 0) {
+                        strokes += buffer[0];
+                    }
+                }
             }
         }
         else if (wParam == WM_KEYUP) {
-            // Calculate the duration when the key is released
-            if (keyPressed && pKeyboard->vkCode == KEY) {
-                mouseUpPos = GetMousePos();
+            // Check if the primary key is released
+            if (pKeyboard->vkCode == PRIMARY_KEY) {
+                // Check if the secondary key is down (changes mode)
+                bool secondaryKeyDown = GetAsyncKeyState(SECONDARY_KEY) & 0x8000;
 
-                auto keyReleaseTime = std::chrono::steady_clock::now();
-                std::chrono::duration<double, std::milli> duration = keyReleaseTime - keyPressTime;
+                if (!secondaryKeyPressed && secondaryKeyDown) {
+                    // If the secondary key was pressed, finalize the strokes
+                    secondaryKeyPressed = false;
+                    recordingStrokes = false;
+                    keystrokeResponse(strokes);
+                    strokes.clear(); // Clear strokes after processing
+                }
+                // Handle key release only if it was previously pressed
+                if (keyPressed && !secondaryKeyDown && !recordingStrokes) {
+                    mouseUpPos = GetMousePos();
+                    auto keyReleaseTime = std::chrono::steady_clock::now();
+                    std::chrono::duration<double, std::milli> duration = keyReleaseTime - keyPressTime;
 
-                onKeyRelease(duration.count(), mouseDownPos, mouseUpPos);
-                keyPressed = false;
+                    onKeyRelease(duration.count(), mouseDownPos, mouseUpPos);
+                    keyPressed = false; // Reset the keyPressed state
+                }
             }
         }
     }

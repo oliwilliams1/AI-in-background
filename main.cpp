@@ -8,14 +8,8 @@
 #include <tesseract/ocrclass.h>
 #include "screenshotApi.h"
 #include "geminiApi.h"
-#include "systemTrayApi.h"
 #include "clipboardApi.h"
 #include "keyboardCallbacks.h"
-
-glm::vec3 C_STATE_READY = glm::vec3(0, 255, 0);
-glm::vec3 C_STATE_AWAITING_RESPONSE = glm::vec3(255, 255, 0);
-glm::vec3 C_STATE_SCREENSHOTTING = glm::vec3(255, 0, 255);
-glm::vec3 C_STATE_AWATING_OCR = glm::vec3(0, 0, 255);
 
 const std::string API_KEY = "AIzaSyAjtbqg0T4aTbqDnJPl8kIlRH9ZYr6v32g";
 
@@ -23,7 +17,7 @@ const std::string API_KEY = "AIzaSyAjtbqg0T4aTbqDnJPl8kIlRH9ZYr6v32g";
 std::string serializeResponse(const std::string& input) {
     std::string output;
 
-    // Numerous charecters that fish out weird ones from the response i.e. 😄
+    // Numerous charecters that fish out weird ones from the response
     std::unordered_set<char> allowedCharecters = {
         '"', '\'', ',', '.', '?', '!', '+', '_', ')', '(', '*', '&', '^',
         '%', '$', '#', '@', '{', '}', '[', ']', '\\', '|', '/', '<', '>',
@@ -63,6 +57,23 @@ std::string performOCR(const cv::Mat& image) {
     ocr->End();
 
     return result;
+}
+
+void keystrokeResponse(const std::string& strokes) {
+    // Indicate application state via icon
+	UpdateTrayIcon(C_STATE_AWAITING_RESPONSE);
+
+	// Send off request
+	std::string response = requestGemini(strokes, API_KEY);
+
+	// Remove weird artifacts from response
+	response = serializeResponse(response);
+
+	// Set clipboard
+	SetClipboardText(response);
+
+    // Indicate application state via icon
+	UpdateTrayIcon(C_STATE_READY);
 }
 
 void basicInteration() {
@@ -108,8 +119,6 @@ void ocrInteraction(cv::Rect roi) {
     // Ocr cropped
     UpdateTrayIcon(C_STATE_AWATING_OCR);
     std::string ocrResult = performOCR(resizedImage);
-
-    std::cout << "OCR result: " << ocrResult;
 
     // Send ocr response off to gemini
     UpdateTrayIcon(C_STATE_AWAITING_RESPONSE);

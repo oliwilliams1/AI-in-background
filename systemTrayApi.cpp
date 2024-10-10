@@ -100,7 +100,6 @@ void SetTrayIcon(const cv::Mat& image) {
     if (hIcon) {
         nid.hIcon = hIcon;
         Shell_NotifyIcon(NIM_MODIFY, &nid);
-        std::cout << "Tray icon updated." << std::endl;
         DestroyIcon(hIcon); // Clean up the icon
     }
 }
