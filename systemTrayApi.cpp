@@ -109,11 +109,12 @@ void UpdateTrayIcon(glm::vec3 colour) {
     cv::Mat mat;
     mat = icon.clone();
 
-    for (int y = 0; y < icon.rows; ++y) {
-        for (int x = 0; x < icon.cols; ++x) {
-            cv::Vec3b& pixel = mat.at<cv::Vec3b>(y, x);
-            if (pixel[2] > 150 && pixel[1] < 200 && pixel[0] < 200) {
-                pixel = cv::Vec3b(colour.x, colour.y, colour.z);
+    for (int y = 0; y < mat.rows; ++y) {
+        for (int x = 0; x < mat.cols; ++x) {
+            cv::Vec4b pixel = mat.at<cv::Vec4b>(y, x);
+
+            if (pixel[0] < 255 && pixel[1] < 255 && pixel[2] == 255) {
+                mat.at<cv::Vec4b>(y, x) = cv::Vec4b(colour[2], colour[1], colour[0], 255);
             }
         }
     }
