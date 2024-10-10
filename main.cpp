@@ -14,7 +14,7 @@
 const std::string API_KEY = "AIzaSyAjtbqg0T4aTbqDnJPl8kIlRH9ZYr6v32g";
 
 // Fast patch to a promblem I cant be bothered to dig into
-std::string serializeResponse(const std::string& input) {
+static std::string serializeResponse(const std::string& input) {
     std::string output;
 
     // Numerous charecters that fish out weird ones from the response
@@ -36,7 +36,7 @@ std::string serializeResponse(const std::string& input) {
     return output;
 }
 
-std::string performOCR(const cv::Mat& image) {
+static std::string performOCR(const cv::Mat& image) {
     // Create a Tesseract OCR engine instance
     tesseract::TessBaseAPI* ocr = new tesseract::TessBaseAPI();
 
@@ -76,7 +76,7 @@ void keystrokeResponse(const std::string& strokes) {
 	UpdateTrayIcon(C_STATE_READY);
 }
 
-void basicInteration() {
+static void basicInteration() {
     // Get question from clipboard
     std::string text = GetClipboardText();
 
@@ -94,7 +94,7 @@ void basicInteration() {
     UpdateTrayIcon(C_STATE_READY);
 }
 
-void ocrInteraction(cv::Rect roi) {
+static void ocrInteraction(cv::Rect roi) {
     // Indicate application state via icon
     UpdateTrayIcon(C_STATE_SCREENSHOTTING);
 
@@ -146,6 +146,7 @@ void onKeyRelease(double duration, const glm::vec2& p1, const glm::vec2& p2) {
 }
 
 int main() {
+    ShowWindow(GetConsoleWindow(), SW_HIDE);
     SetHook();
     InitializeTrayIcon(GetModuleHandle(NULL));
 

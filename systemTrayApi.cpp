@@ -96,7 +96,7 @@ HICON CreateHICONFromMat(const cv::Mat& image) {
 
 void SetTrayIcon(const cv::Mat& image) {
     HICON hIcon = CreateHICONFromMat(image);
-    
+
     if (hIcon) {
         nid.hIcon = hIcon;
         Shell_NotifyIcon(NIM_MODIFY, &nid);
@@ -124,9 +124,8 @@ void UpdateTrayIcon(glm::vec3 colour) {
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
     switch (uMsg) {
     case WM_TRAYICON:
-        if (lParam == WM_LBUTTONDBLCLK) {
-            // Handle left double click (if needed)
-            MessageBox(hwnd, L"Tray Icon Double Clicked!", L"Notification", MB_OK);
+        if (lParam == WM_LBUTTONDOWN) {
+            PostQuitMessage(0); // Close the application
         }
         break;
     case WM_DESTROY:
