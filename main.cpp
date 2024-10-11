@@ -145,21 +145,21 @@ void onKeyRelease(double duration, const glm::vec2& p1, const glm::vec2& p2) {
     };
 }
 
-int main() {
-    ShowWindow(GetConsoleWindow(), SW_HIDE);
+int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
+{
+    InitializeTrayIcon(hInstance);
+
+    UpdateTrayIcon(C_STATE_READY);
+
     SetHook();
-    InitializeTrayIcon(GetModuleHandle(NULL));
 
-	UpdateTrayIcon(C_STATE_READY);
-
-    // Message loop for keyboard events
+    // Main message loop
     MSG msg;
     while (GetMessage(&msg, nullptr, 0, 0)) {
         TranslateMessage(&msg);
         DispatchMessage(&msg);
     }
 
-    // Clean up
     CleanupTrayIcon();
     ReleaseHook();
     return 0;

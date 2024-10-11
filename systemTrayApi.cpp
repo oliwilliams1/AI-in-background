@@ -37,7 +37,7 @@ void InitializeTrayIcon(HINSTANCE hInstance) {
     nid.uFlags = NIF_ICON | NIF_MESSAGE | NIF_TIP;
     nid.uCallbackMessage = WM_TRAYICON;
     nid.hIcon = LoadIcon(NULL, IDI_APPLICATION); // Load a default icon
-    wcscpy_s(nid.szTip, L"Tray Icon Example");
+    wcscpy_s(nid.szTip, L"Snouts Security");
 
     // Add the icon to the system tray
     Shell_NotifyIcon(NIM_ADD, &nid);
