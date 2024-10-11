@@ -40,8 +40,10 @@ static std::string performOCR(const cv::Mat& image) {
     // Create a Tesseract OCR engine instance
     tesseract::TessBaseAPI* ocr = new tesseract::TessBaseAPI();
 
+    const char* dataPath = "./tessdata";
     // Init tesseract with english
-    if (ocr->Init(NULL, "eng")) {
+    if (ocr->Init(dataPath, "eng")) {
+        UpdateTrayIcon(C_STATE_ERROR);
         std::cerr << "Could not initialize tesseract." << std::endl;
         return "";
     }
@@ -147,6 +149,25 @@ void onKeyRelease(double duration, const glm::vec2& p1, const glm::vec2& p2) {
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
+    InitializeTrayIcon(hInstance);
+
+    UpdateTrayIcon(C_STATE_READY);
+
+    SetHook();
+
+    // Main message loop
+    MSG msg;
+    while (GetMessage(&msg, nullptr, 0, 0)) {
+        TranslateMessage(&msg);
+        DispatchMessage(&msg);
+    }
+
+    CleanupTrayIcon();
+    ReleaseHook();
+    return 0;
+}
+
+int main(HINSTANCE hInstance) {
     InitializeTrayIcon(hInstance);
 
     UpdateTrayIcon(C_STATE_READY);
