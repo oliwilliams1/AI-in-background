@@ -2,6 +2,7 @@
 #include <unordered_set>
 #include <windows.h>
 #include <chrono>
+#include <regex>
 #include <glm/vec3.hpp>
 #include <glm/vec2.hpp>
 #include <tesseract/baseapi.h>
@@ -12,6 +13,36 @@
 #include "keyboardCallbacks.h"
 
 const std::string API_KEY = "AIzaSyAjtbqg0T4aTbqDnJPl8kIlRH9ZYr6v32g";
+
+std::string stripMarkdown(const std::string& input) {
+    std::string output = input;
+
+    // Remove headers (###, ##, #)
+    output = std::regex_replace(output, std::regex(R"(^#{1,6}\s*)"), "");
+
+    // Remove bold (**) and (__) formatting
+    output = std::regex_replace(output, std::regex(R"(\*\*(.*?)\*\*|__(.*?)__)"), "$1$2");
+
+    // Remove italic (*) and (_) formatting
+    output = std::regex_replace(output, std::regex(R"(\*(.*?)\*|_(.*?)_)"), "$1$2");
+
+    // Remove inline code (``)
+    output = std::regex_replace(output, std::regex(R"(`(.*?)`)"), "$1");
+
+    // Remove links [text](url)
+    output = std::regex_replace(output, std::regex(R"(\[.*?\]\(.*?\))"), "");
+
+    // Remove images ![alt](url)
+    output = std::regex_replace(output, std::regex(R"(!\[.*?\]\(.*?\))"), "");
+
+    // Remove blockquotes (>)
+    output = std::regex_replace(output, std::regex(R"(>\s*)"), "");
+
+    // Remove lists (*) and (-)
+    output = std::regex_replace(output, std::regex(R"(^\s*[\*\-]\s*)"), "");
+
+    return output;
+}
 
 // Fast patch to a promblem I cant be bothered to dig into
 static std::string serializeResponse(const std::string& input) {
@@ -33,7 +64,7 @@ static std::string serializeResponse(const std::string& input) {
         }
     }
     
-    return output;
+    return stripMarkdown(output);
 }
 
 static std::string performOCR(const cv::Mat& image) {
@@ -122,13 +153,8 @@ static void ocrInteraction(cv::Rect roi) {
     UpdateTrayIcon(C_STATE_AWATING_OCR);
     std::string ocrResult = performOCR(resizedImage);
 
-    // Send ocr response off to gemini
-    UpdateTrayIcon(C_STATE_AWAITING_RESPONSE);
-    std::string response = requestGemini(ocrResult, API_KEY);
-
-    // Remove wierd artifacts fro response
-    response = serializeResponse(response);
-    SetClipboardText(response);
+    // Set ocr result to clipboard
+    SetClipboardText(ocrResult);
 
     // After everything is done, return to ready staate
     UpdateTrayIcon(C_STATE_READY);
